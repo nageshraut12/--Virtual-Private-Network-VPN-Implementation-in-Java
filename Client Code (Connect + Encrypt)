@@ -1,0 +1,21 @@
+Socket socket = new Socket("localhost", 5000);
+DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
+DataInputStream dis = new DataInputStream(socket.getInputStream());
+
+// Generate AES key
+KeyGenerator keyGen = KeyGenerator.getInstance("AES");
+keyGen.init(128);
+SecretKey aesKey = keyGen.generateKey();
+
+// Encrypt AES key with server's public RSA key
+Cipher rsaCipher = Cipher.getInstance("RSA");
+rsaCipher.init(Cipher.ENCRYPT_MODE, serverPublicKey);
+byte[] encryptedAesKey = rsaCipher.doFinal(aesKey.getEncoded());
+dos.write(encryptedAesKey);
+
+// Encrypt data with AES
+String message = "Hello Secure VPN";
+Cipher aesCipher = Cipher.getInstance("AES");
+aesCipher.init(Cipher.ENCRYPT_MODE, aesKey);
+byte[] encryptedMessage = aesCipher.doFinal(message.getBytes());
+dos.write(encryptedMessage);
