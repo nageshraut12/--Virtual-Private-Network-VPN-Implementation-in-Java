@@ -1,0 +1,25 @@
+ServerSocket serverSocket = new ServerSocket(5000);
+Socket clientSocket = serverSocket.accept();
+
+DataInputStream dis = new DataInputStream(clientSocket.getInputStream());
+DataOutputStream dos = new DataOutputStream(clientSocket.getOutputStream());
+
+// Receive encrypted AES key from client
+byte[] encryptedAesKey = new byte[256];
+dis.readFully(encryptedAesKey);
+
+// Decrypt AES key using server's private RSA key
+Cipher rsaCipher = Cipher.getInstance("RSA");
+rsaCipher.init(Cipher.DECRYPT_MODE, serverPrivateKey);
+byte[] aesKeyBytes = rsaCipher.doFinal(encryptedAesKey);
+SecretKey aesKey = new SecretKeySpec(aesKeyBytes, "AES");
+
+// Receive encrypted message
+byte[] encryptedMessage = new byte[128];
+dis.readFully(encryptedMessage);
+
+// Decrypt message using AES key
+Cipher aesCipher = Cipher.getInstance("AES");
+aesCipher.init(Cipher.DECRYPT_MODE, aesKey);
+byte[] decryptedMessage = aesCipher.doFinal(encryptedMessage);
+System.out.println("Decrypted message: " + new String(decryptedMessage));
